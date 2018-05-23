@@ -56,7 +56,7 @@ data AST = Empty |
 pg2ast :: [Char] -> AST
 pg2ast pg = createAST list_tokens_pg_with_subst
   where list_tokens_pg_with_subst = preparePg list_assignations list_tokens_pg
-        list_assignations = parseAssignations extractAssignations pg
+        list_assignations = parseA extractAssignations pg
         list_tokens_pg = selectProgram pg
 
 
@@ -92,6 +92,7 @@ file2list pg = split (condens . dropDelims oneOf "\n ") pg
 -}
 
   
+-- TODO handle commentary section before Assignations
 -- | Return the sub-list corresponding to the list of tokens corresponding to
 -- the Assignation part of the source file.
 extractAssignations :: [[Char]] -> [[Char]]
@@ -107,29 +108,36 @@ extractAssignations (s:ns)
 extractPg :: [[Char]] -> [[Char]]
 extractPg [] = []
 extractPg (s:ns)
-  | s == "Program" = ns
+  | s == "Program" = stripEnd ns
   | otherwise = extractPg ns
-
+  where stripEnd (w:ws)
+          | w == "End" = []
+          | otherwise = w:stripEnd ws
+          
 -- | Parse the Assignation part of the source file.
 --
 -- [@Input@]: The list of tokens corresponding to the Assignation part of the
 --source file.
 --
 -- [@Output@]: A list of Product Id x Exp
-parseAssignations :: [[Char]] -> [([Char], [[Char]])]
-parseAssignations [] = []
-parseAssignations (s:ns)
-  | s == "let" = (head ns, [exp]):parseAssignations (drop ((length exp) + 1) ns)
-  | otherwise = ("Error", [])
-  where exp = read (tail ns)
-        read ("let":_) = []
-        read (s:ns) = s:read ns
- 
+
+parseA :: [[Char]] -> [[[Char]]]
+parseA tokens = oneSplit "let" tokens
+  where oneSplit str [] = []
+        oneSplit str (s:ns)
+          | s == str = oneSplit s ns
+          | otherwise = [res] ++ oneSplit str (drop (length res) ns)
+          where res = read str (s:ns)
+                read str [] = []
+                read str (s:ns)
+                  | s == str = []
+                  | otherwise = s:read str ns
+
 
 
 -- | Substitute the Id in the list of tokens corresponding to the program part
 -- of the source file by the corresponding list of tokens.
-preparePg :: [([Char], [[Char]])] -> [[Char]] -> [[Char]]
+preparePg :: [[[Char]]] -> [[Char]] -> [[Char]]
 
 
 
