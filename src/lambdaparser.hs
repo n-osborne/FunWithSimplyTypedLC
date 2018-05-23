@@ -6,9 +6,133 @@ Licence : MIT
 
 Provide the function pg2ast which turn a program written in Simply Typed Lambda
 Calculus into an Abstract Syntax Tree.
+
+A program in Simply Typed Lambda Calculus is divided into two main parts:
+
+* An @Assignations@ part containing assignations instruction of the form:
+
+    @
+    let id Exp
+    @
+    Where @id@ is an identificator and @Exp@ is a simply styped lambda
+    expression.
+
+* A @Program@ part containing the actual computation which may contain @id@
+  previously defined in the @Assignations@ part.
 -}
+
+
+
 module LambdaParser
   ( pg2ast ) where
+
+
+-- new version with assignations
+
+
+
+-- | Abstract Syntax Tree type declaration.
+--
+-- to be completed
+data AST = Empty |
+           Leaf { len :: Int -- ^ length of the leaf, which is obviously 1
+                , lambdatype :: [Char] -- ^ One of the defined type of the
+                                -- language
+                , name :: [Char] -- ^ Either a value or an id
+                } deriving (Show)
+
+-- | Turn a source file into the corresponding AST.
+pg2ast :: [Char] -> AST
+pg2ast pg = createAST list_tokens_pg_with_subst
+  where list_tokens_pg_with_subst = preparePg list_assignations list_tokens_pg
+        where list_assignations = parseAssignations selectAssignations pg
+              list_tokens_pg = selectProgram pg
+
+
+
+-- | Turn a String into the corresponding list of tokens.
+--
+-- Whitespace is the separator.
+file2list :: [Char] -> [[Char]]
+file2list [] = []
+file2list (c:cs)
+  | c == ' ' = file2list cs
+  | otherwise = [res] ++ file2list (drop (length res) (c:cs))
+    where res = readStr (c:cs)
+          readStr [] = []
+          readStr (' ':cs) = []
+          readStr (c:cs) = c:readStr cs
+
+{-
+file2list src
+  take 6 src == "lambda" =
+  take 5 src == "apply" =
+  take 4 src == "Pair" =
+  take 3 src == "Fst" =
+  take 3 src == "Snd" =
+  take 4 src == "True" =
+  take 5 src == "False" =
+  take 5 src == "Empty" =
+  -}
+
+-- | Return the sub-list corresponding to the list of tokens corresponding to
+-- the Assignation part of the source file
+--
+-- Examples:
+--
+-- >>> selectAssignations ["Assignations", "DON'T", "PANIC!", "Program", "spam","End"]
+-- ["DON'T", "PANIC!"]
+--
+-- >>> selectAssignations ["Assignations", "let", "x", "Int", "Program", "End"]
+-- ["let", "x", "Int"]
+selectAssignations :: [[Char]] -> [[Char]]
+selectAssignations [] = []
+selectAssignations (s:ns)
+  | s == "Assignations" = selectAssignations ns
+  | s == "Program" = []
+  | otherwise = s:selectAssignations ns
+
+
+-- | Return the sub-list corresponding to the list of tokens corresponding to
+-- the Program part of the source file
+selectProgram :: [[Char]] -> [[Char]]
+selectProgram [] = []
+selectProgram (s:ns)
+  | s == "Program" = ns
+  | otherwise = selectProgram ns
+
+-- | Parse the Assignation part of the source file.
+--
+-- [@Input@]: The list of tokens corresponding to the Assignation part of the
+--source file.
+--
+-- [@Output@]: A list of Product Id x Exp
+parseAssignations :: [[Char]] -> [([Char], [[Char]])]
+parserAssignations [] = []
+parserAssignations (s:ns)
+  | s == "let" = (head ns, [exp]):parseAssignations (drop ((length exp) + 1) ns)
+  | otherwise = ("Error", [])
+  where exp = read (tail ns)
+        read ("let":_) = []
+        read (s:ns) = s:read ns
+ 
+
+
+-- | Substitute the Id in the list of tokens corresponding to the program part
+-- of the source file by the corresponding list of tokens.
+preparePg :: [([Char], [[Char]])] -> [[Char]] -> [[Char]]
+
+
+
+-- | Create the AST corresponding to the given list of tokens.
+createAST [[Char]] -> AST
+
+
+
+
+
+
+{--
 
 import GHC.Unicode
 
@@ -85,3 +209,5 @@ readType s
   | take 3 s == "Str" = "Str"
   | take 4 s == "Pair" = "Pair"
   | otherwise = "Error"
+
+--}
