@@ -56,13 +56,15 @@ data AST = Empty |
 pg2ast :: [Char] -> AST
 pg2ast pg = createAST list_tokens_pg_with_subst
   where list_tokens_pg_with_subst = preparePg list_assignations list_tokens_pg
-        list_assignations = parseAssignations selectAssignations pg
+        list_assignations = parseAssignations extractAssignations pg
         list_tokens_pg = selectProgram pg
 
 
 
 -- Helper functions
 
+-- TODO avoid use of length by computing length res when building res
+-- in order to do that: read :: x -> y -> [] -> (Int, [])
 -- | Turn a String into the corresponding list of tokens.
 --
 -- Split the string and drop the separators.
@@ -91,30 +93,22 @@ file2list pg = split (condens . dropDelims oneOf "\n ") pg
 
   
 -- | Return the sub-list corresponding to the list of tokens corresponding to
--- the Assignation part of the source file
---
--- Examples:
---
--- >>> selectAssignations ["Assignations", "DON'T", "PANIC!", "Program", "spam","End"]
--- ["DON'T", "PANIC!"]
---
--- >>> selectAssignations ["Assignations", "let", "x", "Int", "Program", "End"]
--- ["let", "x", "Int"]
-selectAssignations :: [[Char]] -> [[Char]]
-selectAssignations [] = []
-selectAssignations (s:ns)
-  | s == "Assignations" = selectAssignations ns
+-- the Assignation part of the source file.
+extractAssignations :: [[Char]] -> [[Char]]
+extractAssignations [] = []
+extractAssignations (s:ns)
+  | s == "Assignations" = extractAssignations ns
   | s == "Program" = []
-  | otherwise = s:selectAssignations ns
+  | otherwise = s:extractAssignations ns
 
 
 -- | Return the sub-list corresponding to the list of tokens corresponding to
 -- the Program part of the source file
-selectProgram :: [[Char]] -> [[Char]]
-selectProgram [] = []
-selectProgram (s:ns)
+extractPg :: [[Char]] -> [[Char]]
+extractPg [] = []
+extractPg (s:ns)
   | s == "Program" = ns
-  | otherwise = selectProgram ns
+  | otherwise = extractPg ns
 
 -- | Parse the Assignation part of the source file.
 --
