@@ -27,9 +27,8 @@ module LambdaParser
   ( pg2ast ) where
 
 
--- new version with assignations
 
-
+-- Type declaration and main program:
 
 -- | Abstract Syntax Tree type declaration.
 --
@@ -41,40 +40,56 @@ data AST = Empty |
                 , name :: [Char] -- ^ Either a value or an id
                 } deriving (Show)
 
+
 -- | Turn a source file into the corresponding AST.
+--
+-- A source file must contain two main parts deliminated by the three following
+--key words in that order: @Assignations@ @Program@ @End@. The assignation part
+--(between the two first key words) is a series of assignation instruction (with
+--the @let@ key word) and the program part (between the two lasts key words) is
+--the actual computation of which the source file is a description. The program
+--part may contain the identificators declared in the assignation part.
+--
+-- [@input@]: The content of the source file.
+--
+-- [@output@]: the corresponding @AST@.
 pg2ast :: [Char] -> AST
 pg2ast pg = createAST list_tokens_pg_with_subst
   where list_tokens_pg_with_subst = preparePg list_assignations list_tokens_pg
-        where list_assignations = parseAssignations selectAssignations pg
-              list_tokens_pg = selectProgram pg
+        list_assignations = parseAssignations selectAssignations pg
+        list_tokens_pg = selectProgram pg
 
 
+
+-- Helper functions
 
 -- | Turn a String into the corresponding list of tokens.
 --
--- Whitespace is the separator.
+-- Split the string and drop the separators.
+-- Separators are whitespace and end of line.
 file2list :: [Char] -> [[Char]]
-file2list [] = []
-file2list (c:cs)
-  | c == ' ' = file2list cs
-  | otherwise = [res] ++ file2list (drop (length res) (c:cs))
-    where res = readStr (c:cs)
-          readStr [] = []
-          readStr (' ':cs) = []
-          readStr (c:cs) = c:readStr cs
+file2list pg = mydbsplit ' ' '\n' pg
+  where 
+    mydbsplit :: (Eq a) => a -> a -> [a] -> [[a]]
+    mydbsplit x y [] = []
+    mydbsplit x y (c:cs)
+      | c == x = mydbsplit x y cs
+      | c == y = mydbsplit x y cs
+      | otherwise = [res] ++ mydbsplit x y (drop (length res) cs)
+      where res = read x y (c:cs)
+            read x y [] = []
+            read x y (c:cs) 
+              | c == x = []
+              | c == y = []
+              | otherwise = c:read x y cs
 
-{-
-file2list src
-  take 6 src == "lambda" =
-  take 5 src == "apply" =
-  take 4 src == "Pair" =
-  take 3 src == "Fst" =
-  take 3 src == "Snd" =
-  take 4 src == "True" =
-  take 5 src == "False" =
-  take 5 src == "Empty" =
-  -}
 
+{--
+would be version with import Data.List.Split
+file2list pg = split (condens . dropDelims oneOf "\n ") pg
+-}
+
+  
 -- | Return the sub-list corresponding to the list of tokens corresponding to
 -- the Assignation part of the source file
 --
@@ -108,8 +123,8 @@ selectProgram (s:ns)
 --
 -- [@Output@]: A list of Product Id x Exp
 parseAssignations :: [[Char]] -> [([Char], [[Char]])]
-parserAssignations [] = []
-parserAssignations (s:ns)
+parseAssignations [] = []
+parseAssignations (s:ns)
   | s == "let" = (head ns, [exp]):parseAssignations (drop ((length exp) + 1) ns)
   | otherwise = ("Error", [])
   where exp = read (tail ns)
