@@ -1,7 +1,7 @@
 {-# OPTIONS_HADDOCK ignore-exports #-}
 {-|
 Module : LambdaParser
-Copyrigth : (c) Nicolas Osborne, 2018
+Copyrigth : (c) 2018 Nicolas Osborne
 Licence : MIT
 
 Provide the function pg2ast which turn a program written in Simply Typed Lambda
@@ -14,31 +14,35 @@ A program in Simply Typed Lambda Calculus is divided into two main parts:
     @
     let id Exp
     @
+
     Where @id@ is an identificator and @Exp@ is a simply styped lambda
     expression.
 
 * A @Program@ part containing the actual computation which may contain @id@
   previously defined in the @Assignations@ part.
 -}
-
-
-
 module LambdaParser
   ( ) where
-
-
 
 -- Type declaration and main program:
 
 -- | Abstract Syntax Tree type declaration.
---
--- to be completed
-data AST = Empty |
-           Leaf { len :: Int -- ^ length of the leaf, which is obviously 1
-                , lambdatype :: [Char] -- ^ One of the defined type of the
-                                -- language
-                , name :: [Char] -- ^ Either a value or an id
-                } deriving (Show)
+data AST =
+  -- | Correspond to the constant of the language. 
+  Constant { name :: String -- ^ name of the constant
+           , ltype :: String -- ^ type of the constant
+           } |
+  -- | Correspond to the unary operators of the language.
+  Unary { name :: String -- ^ name of the operator
+        , ltype :: String -- ^ type of the operator
+        , below :: AST -- ^ argument of the operator
+        } |
+  -- | Correspond to the binary operators of the language.
+  Binary { name :: String -- ^ name of the operator
+         , ltype :: String -- ^ type of the operator
+         , left :: AST -- ^ first argument of the operator
+         , rigth :: AST -- ^second argument of the operator
+         } deriving (Show)
 
 -- | Turn a source file into the corresponding AST.
 --
@@ -50,10 +54,9 @@ data AST = Empty |
 --part may contain the identificators declared in the assignation part.
 --
 -- [@input@]: The content of the source file.
---
 -- [@output@]: the corresponding @AST@.
 pg2ast :: [Char] -> AST
-pg2ast pg = Empty
+pg2ast pg = Constant "true" "bool"
 
 
 -- Helper functions
@@ -80,12 +83,10 @@ file2list pg = mydbsplit ' ' '\n' pg
               | c == y = []
               | otherwise = c:read x y cs
 
-
 {--
 would be version with import Data.List.Split
 file2list pg = split (condens . dropDelims oneOf "\n ") pg
 -}
-
   
 -- TODO handle commentary section before Assignations
 -- | Return the sub-list corresponding to the list of tokens corresponding to
@@ -96,7 +97,6 @@ extractAssignations (s:ns)
   | s == "Assignations" = extractAssignations ns
   | s == "Program" = []
   | otherwise = s:extractAssignations ns
-
 
 -- | Return the sub-list corresponding to the list of tokens corresponding to
 -- the Program part of the source file
@@ -109,11 +109,11 @@ extractPg (s:ns)
           | w == "End" = []
           | otherwise = w:stripEnd ws
           
+  -- TODO use Data.HashMap.Strict for better time complexity
 -- | Parse the Assignation part of the source file.
 --
 -- [@Input@]: The list of tokens corresponding to the Assignation part of the
 --source file.
---
 -- [@Output@]: A list of assignations. The @head@ of each item is an @id@ and
 --the @tail@ is the @expression@
 parseA :: [[Char]] -> [[[Char]]]
@@ -127,7 +127,6 @@ parseA tokens = oneSplit "let" tokens
                 read str (s:ns)
                   | s == str = []
                   | otherwise = s:read str ns
-
 
 -- | Substitute the Id in the list of tokens corresponding to the program part
 -- of the source file by the corresponding list of tokens.
@@ -143,7 +142,7 @@ preparePg list1 (x:xs) = (check list1 x) ++ (preparePg list1 xs)
 
 -- | Create the AST corresponding to the given list of tokens.
 createAST :: [[Char]] -> AST
-createAST list = Empty
+createAST list = Constant "true" "bool"
 
 
 
