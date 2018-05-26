@@ -22,26 +22,29 @@ A program in Simply Typed Lambda Calculus is divided into two main parts:
   previously defined in the @Assignations@ part.
 -}
 module LambdaParser
-  ( ) where
+  ( pg2ast ) where
 
 -- Type declaration and main program:
 
 -- | Abstract Syntax Tree type declaration.
 data AST =
   -- | Correspond to the constant of the language. 
-  Constant { name :: String -- ^ name of the constant
+  Leave { name :: String -- ^ name of the constant
            , ltype :: String -- ^ type of the constant
+           , size :: Int -- ^ size of the AST (here 1)
            } |
   -- | Correspond to the unary operators of the language.
   Unary { name :: String -- ^ name of the operator
         , ltype :: String -- ^ type of the operator
+        , size :: Int -- ^ size of the AST (1 + size below)
         , below :: AST -- ^ argument of the operator
         } |
   -- | Correspond to the binary operators of the language.
   Binary { name :: String -- ^ name of the operator
          , ltype :: String -- ^ type of the operator
+         , size :: Int -- ^ size of the AST (1 + size left + size rigth)
          , left :: AST -- ^ first argument of the operator
-         , rigth :: AST -- ^second argument of the operator
+         , right :: AST -- ^second argument of the operator
          } deriving (Show)
 
 -- | Turn a source file into the corresponding AST.
@@ -56,10 +59,74 @@ data AST =
 -- [@input@]: The content of the source file.
 -- [@output@]: the corresponding @AST@.
 pg2ast :: [Char] -> AST
-pg2ast pg = Constant "true" "bool"
+pg2ast pg = Leave "true" "bool" 1
 
 
--- Helper functions
+
+
+-- | Create the AST corresponding to the given list of tokens.
+--
+-- This function defines the syntax of the language.
+--
+-- [@input@]: the list of tokens representing the program
+-- [@output@]: the corresponding AST type checked
+createAST :: [[Char]] -> AST
+-- createAST list = Leave "true" "bool" 1
+createAST (s:ns)
+  | elem s ["lambda","apply","pi"] = let l = createAST ns
+                                         r = createAST (drop 1 ns)
+                                     in Binary { name = s
+                                               , ltype = computeBinaryType s (ltype l) (ltype r)
+                                               , size = 1 + (size l) + (size r)
+                                               , left = l
+                                               , right = r
+                                               }
+  | elem s ["first","second"] = let b = createAST ns
+                              in Unary { name = s
+                                       , ltype = computePairElim s (ltype b)
+                                       , size = 1 + (size b)
+                                       , below = b
+                                       }
+  | s == "succ" = let b = createAST ns in Unary "succ" (ltype b) (1+(size b)) b
+  | s == "zero" = Leave "zero" "nat" 1
+  | s == "true" = Leave "true" "bool" 1
+  | s == "false" = Leave "false" "bool" 1
+  | s == "null" = Leave "null" "empty" 1
+  | length s == 1 = Leave s "char" 1
+  --  | otherwise =
+
+-- | Compute type of a pair elimination
+computePairElim :: [Char] -> [Char] -> [Char]
+computePairElim op pairType
+  | op == "first" = head (splitType pairType)
+  | op == "second" = head (drop 1 (splitType pairType))
+  | otherwise = "Type Error"
+
+-- | Given two types and a binary operator, compute the expresion's type.
+computeBinaryType :: [Char] -> [Char] -> [Char] -> [Char]
+computeBinaryType "lambda" t1 t2 = t1 ++ ">" ++ "t2"
+computeBinaryType "apply" t1 t2
+  | elem '>' t1 && (head subtypes) == t2 = head (drop 1 subtypes)
+  | otherwise = "type error"
+  where subtypes = splitType t1
+computeBinaryType "pi" t1 t2 = t1 ++ "x" ++ t2
+
+-- | Split a composed type in its two main parts.
+splitType :: [Char] -> [[Char]]
+splitType [] = []
+splitType t = splitType' 0 [] t
+  where 
+    splitType' :: Int -> [Char] -> [Char] -> [[Char]]
+    splitType' 0 t1 [] = [t1]
+--    splitType' _ [] _ = ["Type Error"]
+    splitType' _ t1 [] = ["Type Error"]
+    splitType' n t1 (s:ns)
+      | n == 0 && (elem s ">x") = [t1, ns]
+      | s == '(' = splitType' (n+1) (t1 ++ [s]) ns
+      | s == ')' = splitType' (n-1) (t1 ++ [s]) ns
+      | otherwise = splitType' n (t1 ++ [s]) ns
+               
+
 
 -- TODO avoid use of length by computing length res when building res
 -- in order to do that: read :: x -> y -> [] -> (Int, [])
@@ -139,10 +206,4 @@ preparePg list1 (x:xs) = (check list1 x) ++ (preparePg list1 xs)
           | x == head y = tail y
           | otherwise = check ys x
          
-
--- | Create the AST corresponding to the given list of tokens.
-createAST :: [[Char]] -> AST
-createAST list = Constant "true" "bool"
-
-
 
