@@ -1,7 +1,7 @@
 {-# OPTIONS_HADDOCK ignore-exports #-}
 {-|
-Module : LambdaParser
-Copyrigth : (c) 2018 Nicolas Osborne
+Module : Lambda2Ast
+Copyright : (c) 2018 Nicolas Osborne
 Licence : MIT
 
 Provide the function pg2ast which turn a program written in Simply Typed Lambda
@@ -21,13 +21,15 @@ A program in Simply Typed Lambda Calculus is divided into two main parts:
 * A @Program@ part containing the actual computation which may contain @id@
   previously defined in the @Assignations@ part.
 -}
-module LambdaParser
+module Lambda2Ast
   ( AST
   , file2ast
   , exp2ast
   ) where
 
--- * Type declaration:
+import Utils
+
+-- * Type declaration
 
 -- | Abstract Syntax Tree type declaration.
 data AST =
@@ -50,7 +52,7 @@ data AST =
          , right :: AST -- ^second argument of the binary operator
          } deriving (Show)
 
--- * Main programs:
+-- * Main programs
 
 -- | Turn a source file into the corresponding 'AST'.
 --
@@ -74,7 +76,7 @@ file2ast file = createAST (file2pg file)
 exp2ast :: [Char] -> AST
 exp2ast exp = createAST (words exp)
 
--- * Build the Abstract Syntax Tree:
+-- * Build the Abstract Syntax Tree
 
 -- | Create the 'AST' corresponding to the given list of tokens.
 --
@@ -110,7 +112,7 @@ createAST (s:ns)
                  in Leave n t 1
   | otherwise = Leave "Error" "Error" 1
          
--- * Type manipulations:
+-- * Type manipulations
 
 -- | Given two types and a binary operator, compute the expression's type.
 --
@@ -213,7 +215,7 @@ splitType t = splitType' 0 [] t
       | s == ')' = splitType' (n-1) (t1 ++ [s]) (x:ns)
       | otherwise = splitType' n (t1 ++ [s]) (x:ns)
 
--- * Prepare the program into a list of tokens:
+-- * Prepare the program into a list of tokens
 
 -- | Prepare the content of a file for 'createAST' function.
 --
@@ -297,26 +299,3 @@ preparePg list1 (x:xs) = (check list1 x) ++ (preparePg list1 xs)
         check (y:ys) x
           | x == head y = tail y
           | otherwise = check ys x
-         
--- * Utils:
-
--- | Split a string into two substrings, the prefix up to the first occurrence
--- of the given Char, and the suffix beginning after this occurrence.
---
--- [@input@]: the separator
--- [@input@]: the string
--- [@output@]: the pair of the two substrings
-oneSplit :: Char -> [Char] -> ([Char], [Char])
-oneSplit c str = (fst res, drop (1+(snd res)) str)
-  where res = substring 0 c [] str
-        substring :: Int -> Char -> [Char] -> [Char] -> ([Char], Int)
-        substring n c w [] = (w, n)
-        substring n sep w (c:cs)
-          | c == sep = (w, n)
-          | otherwise = substring (n+1) sep (w++[c]) cs
-               
--- | strip a string from its outer parenthesis if there is any
-stripPar :: [Char] -> [Char]
-stripPar (c:cs)
-  | c == '(' = take ((length cs) - 1) cs
-  | otherwise = c:cs
