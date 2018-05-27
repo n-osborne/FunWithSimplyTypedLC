@@ -22,7 +22,8 @@ A program in Simply Typed Lambda Calculus is divided into two main parts:
   previously defined in the @Assignations@ part.
 -}
 module LambdaParser
-  ( file2ast
+  ( AST
+  , file2ast
   , exp2ast
   ) where
 
@@ -118,12 +119,69 @@ createAST (s:ns)
 -- [@input@]: type of the second argument
 -- [@output@]: type of the expression
 computeBinaryType :: [Char] -> [Char] -> [Char] -> [Char]
-computeBinaryType "lambda" t1 t2 = "(" ++ t1 ++ ">" ++ t2 ++ ")"
-computeBinaryType "apply" t1 t2
-  | elem '>' t1 && (head subtypes) == t2 = head (drop 1 subtypes)
-  | otherwise = "type error"
-  where subtypes = splitType t1
-computeBinaryType "pi" t1 t2 = "(" ++ t1 ++ "x" ++ t2 ++ ")"
+computeBinaryType op t1 t2
+  | op == "lambda" = computeAbstractionType t1 t2
+  | op == "apply" = computeApplicationType t1 t2
+  | op == "pi" = computePairType t1 t2
+
+-- | Given the binder's type and the body's type, compute the type of the
+-- abstraction.
+--
+-- [@input@]: type of the binder.
+-- [@input@]: type of the body.
+-- [@output@]: type of the expression.
+computeAbstractionType :: [Char] -> [Char] -> [Char]
+computeAbstractionType t1 t2 = t1 ++ " -> " ++ (parenthesizeType t2)
+
+-- | Given the type of a function and the type of an argument, compute the type
+-- of the application.
+--
+-- [@input@]: the type of the function.
+-- [@input@]: the type of the argument.
+-- [@output@]: the type of the expression.
+computeApplicationType :: [Char] -> [Char] -> [Char]
+computeApplicationType t1 t2
+  | (isFunction t1) && ( stripPar (head (splitType t1)) == t2) = head (drop 1 (splitType t1))
+  | otherwise = "Type Error"
+
+-- | Given the type of two expression, compute the type of the pair.
+--
+-- [@input@]: the type of the first element of the pair.
+-- [@input@]: the type of the second element of the pair.
+-- [@output@]: the type of the expression.
+computePairType :: [Char] -> [Char] -> [Char]
+computePairType t1 t2 = (parenthesizeType t1) ++ " x " ++ (parenthesizeType t2)
+
+-- | Prepare a type to be combined with another type. Put a pair parenthesis
+-- around the type if it is a complex type.
+--
+-- [@input@]: the type
+-- [@output@]: the same type
+parenthesizeType :: [Char] -> [Char]
+parenthesizeType ltype
+  | isComplex ltype = "(" ++ ltype ++ ")"
+  | otherwise = ltype
+  where isComplex :: [Char] -> Bool
+        isComplex ltype
+          | elem 'x' ltype = True
+          | elem '>' ltype = True
+          | otherwise = False
+
+-- | Predicate. Determine whether a type is the type of a function.
+--
+-- [@input@]: a type expression.
+-- [@output@]: true if the type is the type of a function, false otherwise.
+isFunction :: [Char] -> Bool
+isFunction ltype
+  | findOp 0 ltype == '>' = True
+  | otherwise = False
+  where findOp :: Int -> [Char] -> Char
+        findOp n [] = 'e'
+        findOp n (c:cs)
+          | n == 0 && c == '-' = '>'
+          | c == '(' = findOp (n+1) cs
+          | c == ')' = findOp (n-1) cs
+          | otherwise = findOp n cs
 
 -- | Compute type of a pair elimination
 --
@@ -135,6 +193,25 @@ computePairElim op pairType
   | op == "first" = head (splitType pairType)
   | op == "second" = head (drop 1 (splitType pairType))
   | otherwise = "Type Error"
+ 
+  -- TODO output should be a tuple
+-- | Split a composed type in its two main parts.
+--
+-- [@input@]: a composed type
+-- [@output@]: the list of the two types composing the composed type
+splitType :: [Char] -> [[Char]]
+splitType [] = []
+splitType t = splitType' 0 [] t
+  where 
+    splitType' :: Int -> [Char] -> [Char] -> [[Char]]
+    splitType' 0 t1 [] = [stripPar t1]
+    splitType' _ t1 [] = ["Type Error"]
+    splitType' n t1 (s:x:ns)
+      | n == 0 && x == '-' = [(stripPar t1), (stripPar (drop 2 ns))]
+      | n == 0 && x == 'x' = [(stripPar t1), (stripPar (drop 1 ns))]
+      | s == '(' = splitType' (n+1) (t1 ++ [s]) (x:ns)
+      | s == ')' = splitType' (n-1) (t1 ++ [s]) (x:ns)
+      | otherwise = splitType' n (t1 ++ [s]) (x:ns)
 
 -- * Prepare the program into a list of tokens:
 
@@ -237,23 +314,6 @@ oneSplit c str = (fst res, drop (1+(snd res)) str)
         substring n sep w (c:cs)
           | c == sep = (w, n)
           | otherwise = substring (n+1) sep (w++[c]) cs
- 
--- | Split a composed type in its two main parts.
---
--- [@input@]: a composed type
--- [@output@]: the list of the two types composing the composed type
-splitType :: [Char] -> [[Char]]
-splitType [] = []
-splitType t = splitType' 0 [] t
-  where 
-    splitType' :: Int -> [Char] -> [Char] -> [[Char]]
-    splitType' 0 t1 [] = [stripPar t1]
-    splitType' _ t1 [] = ["Type Error"]
-    splitType' n t1 (s:ns)
-      | n == 0 && (elem s ">x") = [(stripPar t1), (stripPar ns)]
-      | s == '(' = splitType' (n+1) (t1 ++ [s]) ns
-      | s == ')' = splitType' (n-1) (t1 ++ [s]) ns
-      | otherwise = splitType' n (t1 ++ [s]) ns
                
 -- | strip a string from its outer parenthesis if there is any
 stripPar :: [Char] -> [Char]
