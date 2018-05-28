@@ -1,0 +1,6 @@
+Assignations
+let var x:nat
+let arg succ succ zero
+Program
+apply lambda var pi var var arg
+End.
