@@ -2,7 +2,7 @@
 {-|
 Module : Utils
 Copyright : (c) 2018 Nicolas Osborne
-Licence : MIT
+Licence : BSD 3-clauses
 
 -}
 module Utils

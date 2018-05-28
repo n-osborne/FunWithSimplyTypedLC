@@ -1,3 +1,9 @@
+{-# OPTIONS_HADDOCK ignore-exports #-}
+{-|
+Module : Main
+Copyright = (c) 2018 Nicolas Osborne
+Licence : BSD 3-clauses
+-}
 module Main where
 
 import System.Environment

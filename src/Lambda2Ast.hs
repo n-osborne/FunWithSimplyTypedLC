@@ -2,7 +2,7 @@
 {-|
 Module : Lambda2Ast
 Copyright : (c) 2018 Nicolas Osborne
-Licence : MIT
+Licence : BSD 3-clauses
 
 Provide the function pg2ast which turn a program written in Simply Typed Lambda
 Calculus into an Abstract Syntax Tree.

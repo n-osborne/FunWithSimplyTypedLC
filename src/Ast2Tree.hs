@@ -2,7 +2,7 @@
 {-|
 Module : Ast2Tree
 Copyright : (c) 2018 Nicolas Osborne
-Licence : MIT
+Licence : BSD 3-clauses
 
 Provide the function to turn an Abstract Syntax Tree into a String coding the
 corresponding tree for the @dot@ unix program.
