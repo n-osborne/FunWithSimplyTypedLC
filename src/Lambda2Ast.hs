@@ -23,6 +23,12 @@ A program in Simply Typed Lambda Calculus is divided into two main parts:
 -}
 module Lambda2Ast
   ( AST
+  , name
+  , ltype
+  , size
+  , below
+  , left
+  , right
   , file2ast
   , exp2ast
   ) where
