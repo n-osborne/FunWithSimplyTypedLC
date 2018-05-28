@@ -1,6 +1,4 @@
-module Exp2Tree
-  (exp2tree)
-  where
+module Main where
 
 import System.Environment
 import System.IO
@@ -8,7 +6,7 @@ import Ast2Tree
 import Lambda2Ast
 
  
-exp2tree = do
+main = do
   args <- getArgs
   if (length args) /= 2
     then putStrLn "Error"
