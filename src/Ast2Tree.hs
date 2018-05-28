@@ -14,11 +14,14 @@ module Ast2Tree
 import Lambda2Ast
 import Utils
 
+-- * Exported function
 
 -- | Return the string describing in @dot@ language the tree corresponding to
 -- the given AST.
 ast2tree :: AST -> [Char]
-ast2tree ast = "digraph G {\n" ++ (ast2tree' 0 ast) ++ "}"
+ast2tree ast = "digraph G {\n" ++ (ast2tree' 0 ast) ++ "}\n"
+
+-- * Helper functions
 
 -- | Return the internal description of the AST.
 ast2tree' :: Int -> AST -> [Char]
