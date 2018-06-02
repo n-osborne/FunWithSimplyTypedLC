@@ -1,0 +1,8 @@
+Assignations
+let x lambda x:nat succ x:nat
+let y lambda x:nat succ succ x:nat
+let z lambda x:nat pi x:nat
+let n succ succ succ succ succ zero
+Program
+apply z apply y n apply x n
+End
