@@ -58,5 +58,5 @@ leaf2tree n ast = printNode n ast
 -- | Return the part of the string describing the node label in the description
 -- of the given 'AST' in the @dot@ language
 printNode :: Int -> AST -> [Char]
-printNode n ast = "\t" ++ (show n) ++ " [label=\"" ++ (ltype ast) ++ "\"];\n"
+printNode n ast = "\t" ++ (show n) ++ " [label=\"" ++  (name ast) ++ ":" ++ (ltype ast) ++ "\"];\n"
 
