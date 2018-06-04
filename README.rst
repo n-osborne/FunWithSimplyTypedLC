@@ -1,13 +1,42 @@
 lambda Typer <°λ°>
 ==================
 
-Generated doc is availble `here <https://n-osborne.github.io/FunWithSimplyTypedLC/>`_.
+Generated doc is availble `here <https://n-osborne.github.io/lTyper/>`_.
 
 Description
 -----------
 
-``lambda Typer``  (``lTyper`` for short) provides tools to generate a tree-like
-description of the type of a lambda expression.
+``lambda Typer`` (``lTyper`` for short) provides tools to generate a tree-like
+description of the type of a lambda expression from the lambda calculus typed
+with (one) type constructor. That would be :math:`\lambda \underline{\omega}`
+in the `lambda cube <https://en.wikipedia.org/wiki/Lambda_cube>`_.
+
+The syntax is quite simple.
+
+The set of raw types consists of four elements: {nat, char, bool, empty}
+
+We have an infinite set of variable names that must be typed (for example
+``x:nat`` or ``y:char``).
+
+The type ``char`` is populated by the 26 lower case letters of the latin alphabet.
+
+- ``zero`` is the constant equal the the lower natural number.
+- ``succ`` is the successor operator which take a ``nat`` as argument.
+- ``pi`` is the type constructor for the product type (``pi`` stands for pair introduction).
+- ``first`` extracts the first element of a pair.
+- ``second`` extracts the second element of a pair.
+- ``true`` is the constant for the boolean true.
+- ``false`` is the constant for the boolean false.
+- ``null`` is the only member of the type empty.
+- ``lambda`` build a lambda abstraction. It is a binary operator that takes a
+  typed name (variable) as a binder and a lambda expression as the body of the
+  lambda abstraction. For example, ``lambda x:nat succ x:nat`` is the function
+  that compute the successor of every natural number given as argument.
+- ``apply`` is a binary operator that apply the second argument to the lambda
+  abstraction which is the first argument. For example, ``apply lambda x:nat
+  succ x:nat zero`` computes the successor of zero, that is one.
+      
+    
 
 Installation
 ------------
@@ -84,20 +113,3 @@ Here is one of the example provided in the ``examples`` directory:
 
 .. Image:: img/complex.svg
 
-	   
-Brief description of the language
----------------------------------
-
-We give ourself an infinite set of variables and we have the set
-:math:`\mathbb{C}={zero, a\dots b, true, false, null}` of constants. A well
-formed expression is defined by the following BNF:
-
-.. math::
-   E :=& var:type \\
-   |& const\\
-   |& lambda\; var:type\; E \\
-   |& apply\; E_1\; E_2\; \textrm{(given }E_1:A\rightarrow B\textrm{ and }E_2:A\textrm{)}\\
-   |& succ E\; \textrm{(given }E:nat\textrm{)} \\
-   |& pi\; E_1\; E_2 \\
-   |& first\; E\; \textrm{(given }E:A\times B\textrm{)} \\
-   |& second\; E\; \textrm{(given }E:A\times B\textrm{)} \\
